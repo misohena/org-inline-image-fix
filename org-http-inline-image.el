@@ -60,12 +60,11 @@ BEG and END default to the buffer boundaries."
 
    (defun my-org-add-inline-image-overlay (img)
      (when img
-       (setq ov (make-overlay (match-beginning 0) (match-end 0)))
-       (overlay-put ov 'display img)
-       (overlay-put ov 'face 'default)
-       (overlay-put ov 'org-image-overlay t)
-       (overlay-put ov 'modification-hooks
-		    (list 'org-display-inline-modification-hook))
-       (push ov org-inline-image-overlays)))
-
+       (let ((ov (make-overlay (match-beginning 0) (match-end 0))))
+	 (overlay-put ov 'display img)
+	 (overlay-put ov 'face 'default)
+	 (overlay-put ov 'org-image-overlay t)
+	 (overlay-put ov 'modification-hooks
+		      (list 'org-display-inline-modification-hook))
+	 (push ov org-inline-image-overlays))))
 ))
