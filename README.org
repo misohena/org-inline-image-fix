@@ -1,0 +1,87 @@
+#+TITLE: org-mode Inline Image Fix
+
+This repository is a collection of fixes related to the image display feature in org-mode.
+
+All the fixes are done by force using advice and cl-letf, so there is a possibility that it will not work due to the version upgrade of org-mode.
+
+* Data URI Support(org-datauri-image.el)
+- Display data URI link as inline image
+- Export data URI (HTML backend only)
+
+** Setup
+#+begin_src emacs-lisp
+(with-eval-after-load "org"
+  (require 'org-datauri-image)
+  (org-datauri-image-activate))
+#+end_src
+
+To use display inline images only:
+
+#+begin_src emacs-lisp
+(with-eval-after-load "org"
+  (require 'org-datauri-image)
+  (org-datauri-image-activate-display))
+#+end_src
+
+** Example
+#+begin_src org
+Red Circle:
+[​[data:image/svg;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGhlaWdodD0iMTAwIiB3aWR0aD0iMTAwIj4NCiAgPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDAiIHN0cm9rZT0iYmxhY2siIHN0cm9rZS13aWR0aD0iMyIgZmlsbD0icmVkIiAvPg0KPC9zdmc+DQo=]]
+#+end_src
+
+#+begin_src org
+Fuji-san!:
+[​[data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAAeAAD/7gAOQWRvYmUAZMAAAAAB/9sAhAAQCwsLDAsQDAwQFw8NDxcbFBAQFBsfFxcXFxcfHhcaGhoaFx4eIyUnJSMeLy8zMy8vQEBAQEBAQEBAQEBAQEBAAREPDxETERUSEhUUERQRFBoUFhYUGiYaGhwaGiYwIx4eHh4jMCsuJycnLis1NTAwNTVAQD9AQEBAQEBAQEBAQED/wAARCAAyAGQDASIAAhEBAxEB/8QAgAAAAgMBAAAAAAAAAAAAAAAAAAMBAgQFAQADAQEBAAAAAAAAAAAAAAAAAQIDBAUQAAEDAgQDBQYFBQAAAAAAAAEAAgMRBCExQRJRYQVxgcEiE/CRoTJCI9FighQGsVJy0hURAAICAQUBAQAAAAAAAAAAAAABEQIhMUFxEgNhIv/aAAwDAQACEQMRAD8A3UUUTdqjavTk4RdEbUyiCESAvaooupadIkkHq3NYos9uTz/qtEsdrb27nmNvosxNBUuP0tbriVm/aqcL9cGi821LwcOmuiKLbYRsuZWzOFHuJLmfTUHIjgFlvz+1vZWBpNuTVnFoOnv0VL0Tt10ZLpCkXRFFdhZI3cw7hy8VO1XJIuiKJm1RtSkYuiEzahEgP2oppqcgujH0xxP3JABwYKn4pzH9Ptdwic3e2geR55MchgsLeyWn6LXm3rgxQdMuZaFwETDjV3zU/wAfxXStrG3tjuY3fIM5X+A0WC6/kNnECIj6zxlo2vMrmTfyK4kG07RGHCtBSrRiQeTslm36X+I0SrX6zvz3QeKM8zjXZ/aKYbnDXksPUqMsXNc5xeW9ri0GrqcOSLa7bJbC8lpFGRvcTjQDCpp8Fnml/emR0cgMM3kYW4kNaKf1xRWsPgbeOSttIYLtkjDSCaIFjnUFZCK4/mcnXVsJ9gFXCRo81RUO4HvzWQPt/wB62IncyGNkcUTfMXStzw4N1KnqN3Pbwhsbmm4jf6jY8Hbg75wOzNVuo1J2yZ32jo/uxbo5AS1zW4iozpXPsVhO5jWm4ZRrhhKzFv6hm1DOrCS29a5YXMeNskrRSrqV2kYeamoTY7m1lkMDHje5m9ocKB7TjjzotFd7ol1WxZu17dzCHNOoxCNqqLSMOJjJilpVpYaB1eNcCUmPqMBO18jX/mb5T3tPgq7Jk9WP2oR69tt3eo2iESEHMuuuTTuqS5wGFK+mwgalrfMa8ysU3ULqYU3emzSOIbG/DE96zjHPAozyxUqqWxTbJLzqUBzndgUGmqN3AYJiN111B/8Az4bGJ3kA3SvIoXGtdvYCskE8kIcYnFsjsNwz20xAPNUNCa1FSpa0AgjHgUsIeWaIb2W39F8IAfG1zXOI3Fwca0x0WaaaWaUzSuL5XUJec/grUaRiFDgKcxqhQGSwvJjEYH/ciOJa7Q8WnQpkVw5txFdOJl9LbRoIaQW5B3LsWanvUhrgQ4dyMCya7vqdzckZQxjFsTK0B1OKyGutVYgUrka5ckbTSoIPfihQMrsbtrTmhFDWuqEAW+p2eff3oOXt8EIQIjUeKDl3IQgZQ5J306+KEJMELf8AKc/1I4exQhADOHjn3KW/j2IQkUU+kZ69in2xQhMRX3IQhAj/2Q==]]
+#+end_src
+
+**  Supported URI Format
+  "data:image/" ( "png" | "jpeg" | "gif" | "svg+xml" ) ";base64," /base64string/
+
+* Limit Inline Image Size(org-limit-image-size.el)
+Shrink images if necessary when displaying inline images.
+This extension just adds :max-width and :max-height to inline images.
+This prevents images from overflowing the frames.
+
+** Setup
+#+begin_src emacs-lisp
+(with-eval-after-load "org"
+  (require 'org-limit-image-size)
+  (org-limit-image-size-activate))
+#+end_src
+
+** Customization Variables
+- org-limit-image-size ::
+  Specify the maximum size of the images.
+
+  - integer :: Pixels width and height
+  - float :: Rate of frame size
+  - (cons integer-or-float integer-or-float) :: Cons of width and height
+
+** Development Note
+http://misohena.jp/blog/2020-05-26-limit-maximum-inline-image-size-in-org-mode.html
+
+* Automatic Image Update
+Automatically update inline images without org-toggle-inline-images.
+
+** Setup
+#+begin_src emacs-lisp
+(with-eval-after-load "org"
+  (require 'org-flyimage)
+  (org-flyimage-activate))
+#+end_src
+
+** Development Note
+http://misohena.jp/blog/2020-05-25-auto-update-inline-images-in-org-mode.html
+
+* Display HTTP Images(org-http-inline-image.el)
+Display HTTP/HTTPS image link inline. All images are download every time.
+
+** Setup
+#+begin_src emacs-lisp
+(with-eval-after-load "org"
+  (require 'org-http-inline-image)
+  (org-http-inline-image-activate))
+#+end_src
+
+** Development Note
+http://misohena.jp/blog/2012-03-11-120311a.html
