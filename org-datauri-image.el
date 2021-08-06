@@ -28,7 +28,7 @@
 
 
 (defconst org-datauri-image-link-head-re
-  "^image/\\(:?png\\|jpeg\\|gif\\|svg\\+xml\\);base64,"
+  "^image/\\(png\\|jpeg\\|gif\\|svg\\+xml\\);base64,"
   "Regexp that matches beginning of data URI.")
 
 (defun org-datauri-image-activate ()
@@ -242,14 +242,25 @@
                      (string-match org-datauri-image-link-head-re file))
                 (create-image
                  (base64-decode-string (substring file (match-end 0)) nil)
-                 (and (image-type-available-p 'imagemagick)
-                      width
-                      'imagemagick)
+                 (or
+                  (and (image-type-available-p 'imagemagick)
+                       width 'imagemagick) ;;obsolete
+                  (org-datauri-image-mime-to-type (match-string 1 file)))
+                 t
                  :width width)
               (funcall old-org--create-inline-image file width)))))
 
       ;; Call original org-display-inline-images
       (apply orig-fun include-linked rest))))
+
+(defun org-datauri-image-mime-to-type (image-mime)
+  (alist-get
+   image-mime
+   '(("png" . png)
+     ("jpeg" . jpeg)
+     ("gif" . gif)
+     ("svg+xml" . svg)) ;;include svgz. but must specify 'svg (not 'svgz)
+   nil nil #'string=))
 
 
 ;; Export
