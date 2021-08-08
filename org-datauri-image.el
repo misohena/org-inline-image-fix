@@ -111,7 +111,7 @@
 ;;
 ;;  (defun org--create-inline-image (file width)
 ;;+... Add data uri support
-(defun org-datauri-image--display-inline-images (orig-fun include-linked &rest rest)
+(defun org-datauri-image--display-inline-images (orig-fun &optional include-linked &rest rest)
   ":around advice to support data URI for org-display-inline-images function."
   ;; Based on org-mode version 9.4.6
   (let* (;; Functions before overridden

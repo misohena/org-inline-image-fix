@@ -43,7 +43,7 @@
 ;; Override org-display-inline-images
 
 
-(defun org-http-inline-image--display-inline-images (orig-fun include-linked &rest rest)
+(defun org-http-inline-image--display-inline-images (orig-fun &optional include-linked &rest rest)
   ;; Based on org-mode version 9.4.6
   (let* (;; Functions before overridden
          (old-format (symbol-function 'format))
