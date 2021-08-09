@@ -50,12 +50,12 @@
     (funcall old-func limit)))
 
 (defun org-flyimage-remove-inline-images-in (beg end)
-  (loop for ov in org-inline-image-overlays
-        if (let ((ovbeg (overlay-start ov))
-                 (ovend (overlay-end ov)))
-             (and (numberp ovbeg) (numberp ovend)
-                  (< ovbeg end) (> ovend beg)))
-        do (org-display-inline-remove-overlay ov t nil nil)))
+  (cl-loop for ov in org-inline-image-overlays
+           if (let ((ovbeg (overlay-start ov))
+                    (ovend (overlay-end ov)))
+                (and (numberp ovbeg) (numberp ovend)
+                     (< ovbeg end) (> ovend beg)))
+           do (org-display-inline-remove-overlay ov t nil nil)))
 
 (defun org-flyimage-remove-flyspell-overlays-in (old-func beg end)
   (funcall old-func beg end)
