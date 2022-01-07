@@ -68,24 +68,20 @@
 (defun org-limit-image-size--create-image
     (old-func file-or-data &optional type data-p &rest props)
 
-  (if (and org-limit-image-size
-           (null type)
-           ;;(image-type-available-p 'imagemagick)
-           (null (plist-get props :width)))
-      ;; limit to maximum size
-      (apply
-       old-func
-       file-or-data
-       (if (image-type-available-p 'imagemagick) 'imagemagick)
-       data-p
-       (plist-put
-        (plist-put
-         (org-plist-delete props :width) ;;remove (:width nil)
-         :max-width (org-limit-image-size--get-limit-size t))
-        :max-height (org-limit-image-size--get-limit-size nil)))
+  (when org-limit-image-size
 
-    ;; default
-    (apply old-func file-or-data type data-p props)))
+    (when (and (null type)
+               (image-type-available-p 'imagemagick))
+      (setq type 'imagemagick))
+
+    (unless (plist-get props :width)
+      (setq props (org-plist-delete props :width))) ;;remove (:width nil)
+    (setq props
+          (plist-put props :max-width (org-limit-image-size--get-limit-size t)))
+    (setq props
+          (plist-put props :max-height (org-limit-image-size--get-limit-size nil))))
+
+  (apply old-func file-or-data type data-p props))
 
 
 (provide 'org-limit-image-size)
