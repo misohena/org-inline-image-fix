@@ -162,12 +162,14 @@
           (lambda (file width)
             (if target-type-p
                 (ignore-errors
-                  (create-image
+                  (apply
+                   #'create-image
                    (org-http-inline-image-retrieve-url (concat link-type ":" file))
                    (and (image-type-available-p 'imagemagick)
                         width
                         'imagemagick)
-                   :width width))
+                   t ;;DATA-P
+                   (when width (list :width width))))
               (funcall old-org--create-inline-image file width)))))
 
       ;; Call original org-display-inline-images
