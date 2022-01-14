@@ -27,61 +27,84 @@
 ;;; Code:
 
 
-;; Image Size Setting
+;;;; Image Size Setting
 
 
-(defcustom org-limit-image-size '(0.90 . 0.4) "Maximum image size") ;; integer or float or (width-int-or-float . height-int-or-float)
+(defcustom org-limit-image-size '(0.90 . 0.4) "Maximum image size"
+  :group 'org
+  :type
+  '(choice (integer :tag "Pixels")
+           (float :tag "Ratio to frame size")
+           (cons :tag "Width and Height"
+                 (choice (integer :tag "Width in pixels")
+                         (float :tag "Width as a ratio to frame width"))
+                 (choice (integer :tag "Height in pixels")
+                         (float :tag "Height as a ratio to frame height")))))
 
-(defun org-limit-image-size--get-limit-size (width-p)
-  (let ((limit-size (if (numberp org-limit-image-size)
-                        org-limit-image-size
-                      (if width-p (car org-limit-image-size)
-                        (cdr org-limit-image-size)))))
+(defun org-limit-image-size--get-size (width-p)
+  "Return the maximum size of the image in pixels.
+
+If WIDTH-P is non-nil, return width, otherwise return height."
+  (let ((limit-size
+         (if (consp org-limit-image-size)
+             (if width-p (car org-limit-image-size) (cdr org-limit-image-size))
+           org-limit-image-size)))
     (if (floatp limit-size)
-        (ceiling (* limit-size (if width-p (frame-text-width) (frame-text-height))))
+        (ceiling (* limit-size
+                    (if width-p (frame-text-width) (frame-text-height))))
       limit-size)))
 
 
-;; Activate/Deactivate
+;;;; Activate/Deactivate
 
 
 (defun org-limit-image-size-activate ()
   (interactive)
-  (advice-add #'org-display-inline-images :around #'org-limit-image-size--org-display-inline-images))
+  (advice-add #'org-display-inline-images :around
+              #'org-limit-image-size--org-display-inline-images))
 
 (defun org-limit-image-size-deactivate ()
   (interactive)
-  (advice-remove #'org-display-inline-images #'org-limit-image-size--org-display-inline-images))
+  (advice-remove #'org-display-inline-images
+                 #'org-limit-image-size--org-display-inline-images))
 
 
-;; Override Functions
+;;;; Override Functions
 
 
 (defun org-limit-image-size--org-display-inline-images (old-func &rest args)
-  (let ((old-create-image (symbol-function 'create-image)))
-    (cl-letf (
-              ((symbol-function 'create-image)
-               (lambda (&rest args)
-                 (apply 'org-limit-image-size--create-image old-create-image args))))
-      (apply old-func args))))
+  "Forces :max-width and :max-height properties to be added to
+the create-image function while org-display-inline-images is
+running."
+  (cl-letf* ((old-create-image (symbol-function #'create-image))
+             ((symbol-function #'create-image)
+              (lambda (&rest args)
+                (apply #'org-limit-image-size--create-image
+                       old-create-image args))))
+    (apply old-func args)))
 
 (defun org-limit-image-size--create-image
-    (old-func file-or-data &optional type data-p &rest props)
-
+    (old-create-image file-or-data &optional type data-p &rest props)
+  "Call OLD-CREATE-IMAGE by adding :max-width and :max-height to the PROPS."
   (when org-limit-image-size
-
+    ;; Use imagemagick if available (for Emacs Version < 27).
     (when (and (null type)
                (image-type-available-p 'imagemagick))
       (setq type 'imagemagick))
 
+    ;; Remove :width nil.
+    ;; Some environments fail when :width nil and :max-width are
+    ;; specified at the same time (Emacs 26 and ImageMagick).
     (unless (plist-get props :width)
-      (setq props (org-plist-delete props :width))) ;;remove (:width nil)
-    (setq props
-          (plist-put props :max-width (org-limit-image-size--get-limit-size t)))
-    (setq props
-          (plist-put props :max-height (org-limit-image-size--get-limit-size nil))))
+      (setq props (org-plist-delete props :width)))
 
-  (apply old-func file-or-data type data-p props))
+    ;; Add :max-width and :max-height
+    (setq props
+          (plist-put props :max-width (org-limit-image-size--get-size t)))
+    (setq props
+          (plist-put props :max-height (org-limit-image-size--get-size nil))))
+
+  (apply old-create-image file-or-data type data-p props))
 
 
 (provide 'org-limit-image-size)

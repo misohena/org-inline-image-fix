@@ -38,7 +38,6 @@ Fuji-san!:
   "data:image/" ( "png" | "jpeg" | "gif" | "svg+xml" ) ";base64," /base64string/
 
 * Limit Inline Image Size(org-limit-image-size.el)
-Shrink images if necessary when displaying inline images.
 This extension just adds :max-width and :max-height to inline images.
 This prevents images from overflowing the frames.
 
