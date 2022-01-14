@@ -60,13 +60,13 @@ This prevents images from overflowing the frames.
 http://misohena.jp/blog/2020-05-26-limit-maximum-inline-image-size-in-org-mode.html
 
 * Automatic Image Update
-Automatically update inline images without org-toggle-inline-images.
+Automatically update inline images without org-toggle-inline-images and org-redisplay-inline-images.
 
 ** Setup
 #+begin_src emacs-lisp
 (with-eval-after-load "org"
   (require 'org-flyimage)
-  (org-flyimage-activate))
+  (add-hook 'org-mode-hook 'org-flyimage-mode))
 #+end_src
 
 ** Development Note

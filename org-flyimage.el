@@ -20,28 +20,56 @@
 
 ;;; Commentary:
 
-;;  (with-eval-after-load "org"
-;;    (require 'org-flyimage)
-;;    (org-flyimage-activate))
+;; Setup:
+;; (with-eval-after-load "org"
+;;   (require 'org-flyimage)
+;;   (add-hook 'org-mode-hook 'org-flyimage-mode))
 
 ;;; Code:
 
+;;;; Minor Mode
 
-;; Activate/Deactivate
+;;;###autoload
+(define-minor-mode org-flyimage-mode
+  "Minor mode for Automatically update inline images."
+  :group 'org
 
-(defun org-flyimage-activate ()
+  (unless (derived-mode-p 'org-mode)
+    (error "Not a Org buffer"))
+
+  (cond
+   ;; Turn on
+   (org-flyimage-mode
+    (org-flyimage-enable-global-hooks)
+    (font-lock-flush))
+
+   ;; Turn off
+   (t
+    (org-remove-inline-images))))
+
+;;;; Global Hooks
+
+(defvar org-flyimage-enabled-global-hooks nil)
+
+(defun org-flyimage-enable-global-hooks ()
   (interactive)
-  (advice-add #'org-activate-links :around #'org-flyimage-activate-links)
-  (advice-add #'org-remove-flyspell-overlays-in :around #'org-flyimage-remove-flyspell-overlays-in))
+  (unless org-flyimage-enabled-global-hooks
+    (advice-add #'org-activate-links
+                :around #'org-flyimage-activate-links)
+    (advice-add #'org-remove-flyspell-overlays-in
+                :around #'org-flyimage-remove-flyspell-overlays-in)
+    (setq org-flyimage-enabled-global-hooks t)))
 
-(defun org-flyimage-deactivate ()
+(defun org-flyimage-disable-global-hooks ()
   (interactive)
-  (advice-remove #'org-activate-links #'org-flyimage-activate-links)
-  (advice-remove #'org-remove-flyspell-overlays-in #'org-flyimage-remove-flyspell-overlays-in))
+  (when org-flyimage-enabled-global-hooks
+    (setq org-flyimage-enabled-global-hooks nil)
+    (advice-remove #'org-activate-links
+                   #'org-flyimage-activate-links)
+    (advice-remove #'org-remove-flyspell-overlays-in
+                   #'org-flyimage-remove-flyspell-overlays-in)))
 
-
-;; Override font-lock functions
-
+;;;; Override font-lock functions
 
 (defvar org-flyimage-in-activate-links nil)
 
@@ -58,13 +86,13 @@
            do (org-display-inline-remove-overlay ov t nil nil)))
 
 (defun org-flyimage-remove-flyspell-overlays-in (old-func beg end)
-  (funcall old-func beg end)
+  (prog1 (funcall old-func beg end)
+    (when org-flyimage-mode
+      (if t ;;(not org-flyimage-in-activate-links) ;;in t, reflect #+attr_html: :width immediately. but slow
+          (org-flyimage-remove-inline-images-in beg end))
 
-  (if t ;;(not org-flyimage-in-activate-links) ;;in t, reflect #+attr_html: :width immediately. but slow
-      (org-flyimage-remove-inline-images-in beg end))
-
-  (if org-flyimage-in-activate-links
-      (org-display-inline-images nil t beg end)))
+      (when org-flyimage-in-activate-links
+        (org-display-inline-images nil t beg end)))))
 
 
 (provide 'org-flyimage)
