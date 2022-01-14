@@ -87,22 +87,50 @@ running."
     (old-create-image file-or-data &optional type data-p &rest props)
   "Call OLD-CREATE-IMAGE by adding :max-width and :max-height to the PROPS."
   (when org-limit-image-size
-    ;; Use imagemagick if available (for Emacs Version < 27).
-    (when (and (null type)
-               (image-type-available-p 'imagemagick))
-      (setq type 'imagemagick))
+    (let ((max-width (org-limit-image-size--get-size t))
+          (max-height (org-limit-image-size--get-size nil))
+          (width (plist-get props :width))
+          (height (plist-get props :height)))
 
-    ;; Remove :width nil.
-    ;; Some environments fail when :width nil and :max-width are
-    ;; specified at the same time (Emacs 26 and ImageMagick).
-    (unless (plist-get props :width)
-      (setq props (org-plist-delete props :width)))
+      ;; Use imagemagick if available (for Emacs Version < 27).
+      (when (and (null type)
+                 (image-type-available-p 'imagemagick))
+        (setq type 'imagemagick))
 
-    ;; Add :max-width and :max-height
-    (setq props
-          (plist-put props :max-width (org-limit-image-size--get-size t)))
-    (setq props
-          (plist-put props :max-height (org-limit-image-size--get-size nil))))
+      ;; Limit :width and :height property.
+      ;;@todo clone props?
+      (when (and (numberp width) (> width max-width))
+        (when (numberp height)
+          (setq props
+                (plist-put props
+                           :height
+                           (setq height (/ (* height max-width) width)))))
+        (setq props
+              (plist-put props
+                         :width
+                         (setq width max-width))))
+      (when (and (numberp height) (> height max-height))
+        (when (numberp width)
+          (setq props
+                (plist-put props
+                           :width
+                           (setq width (/ (* width max-height) height)))))
+        (setq props
+              (plist-put props
+                         :height
+                         (setq height max-height))))
+
+      ;; Remove :width nil.
+      ;; Some environments fail when :width nil and :max-width are
+      ;; specified at the same time (Emacs 26 and ImageMagick).
+      (unless (plist-get props :width)
+        (setq props (org-plist-delete props :width)))
+
+      ;; Add :max-width and :max-height
+      (setq props
+            (plist-put props :max-width max-width))
+      (setq props
+            (plist-put props :max-height max-height))))
 
   (apply old-create-image file-or-data type data-p props))
 
