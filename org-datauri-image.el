@@ -26,6 +26,9 @@
 
 ;;; Code:
 
+(require 'org)
+(require 'org-element)
+
 
 (defconst org-datauri-image-link-head-re
   "^image/\\(png\\|jpeg\\|gif\\|svg\\+xml\\);base64,"
@@ -265,6 +268,7 @@
 
 ;; Export
 
+(defvar org-html-inline-image-rules)
 
 (defun org-datauri-image-activate-exporter ()
   "Enable to export data URI images. Currently support is for HTML backend only."

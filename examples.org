@@ -14,6 +14,7 @@ Fuji-san!(JPEG)
 
 
 svgzは対応していない？ 素のまま表示する分にはうまく動くけど。→対応させた。ただしブラウザでは表示できない。
+
 [[data:image/svg+xml;base64,H4sICPlxC2EAA3Rlc3Quc3ZnADWNwQ7CMAxD70j8Q5Q7a2FwQQ3/AllpqxU2tRUZf0/Q4PRs2bJdfQVYHvlZCWNr89kYEemk76YSzMFaa7SBEH0KsRHurUWQNLS46st2A+A4Fc4eeCE8ac7vlYXwqKitTKMnvOUrj3+7+430CPeUM2HxA4LRPfd9VH4Ao4HnzJsAAAA=]]
 
 素晴らしい。
@@ -25,13 +26,14 @@ svgzは対応していない？ 素のまま表示する分にはうまく動く
 [[https://example.com][data:image/jpeg;base64,/9j/4QAYRXhpZgAASUkqAAgAAAAAAAAAAAAAAP/sABFEdWNreQABAAQAAAAeAAD/7gAOQWRvYmUAZMAAAAAB/9sAhAAQCwsLDAsQDAwQFw8NDxcbFBAQFBsfFxcXFxcfHhcaGhoaFx4eIyUnJSMeLy8zMy8vQEBAQEBAQEBAQEBAQEBAAREPDxETERUSEhUUERQRFBoUFhYUGiYaGhwaGiYwIx4eHh4jMCsuJycnLis1NTAwNTVAQD9AQEBAQEBAQEBAQED/wAARCAAyAGQDASIAAhEBAxEB/8QAgAAAAgMBAAAAAAAAAAAAAAAAAAMBAgQFAQADAQEBAAAAAAAAAAAAAAAAAQIDBAUQAAEDAgQDBQYFBQAAAAAAAAEAAgMRBCExQRJRYQVxgcEiE/CRoTJCI9FighQGsVJy0hURAAICAQUBAQAAAAAAAAAAAAABEQIhMUFxEgNhIv/aAAwDAQACEQMRAD8A3UUUTdqjavTk4RdEbUyiCESAvaooupadIkkHq3NYos9uTz/qtEsdrb27nmNvosxNBUuP0tbriVm/aqcL9cGi821LwcOmuiKLbYRsuZWzOFHuJLmfTUHIjgFlvz+1vZWBpNuTVnFoOnv0VL0Tt10ZLpCkXRFFdhZI3cw7hy8VO1XJIuiKJm1RtSkYuiEzahEgP2oppqcgujH0xxP3JABwYKn4pzH9Ptdwic3e2geR55MchgsLeyWn6LXm3rgxQdMuZaFwETDjV3zU/wAfxXStrG3tjuY3fIM5X+A0WC6/kNnECIj6zxlo2vMrmTfyK4kG07RGHCtBSrRiQeTslm36X+I0SrX6zvz3QeKM8zjXZ/aKYbnDXksPUqMsXNc5xeW9ri0GrqcOSLa7bJbC8lpFGRvcTjQDCpp8Fnml/emR0cgMM3kYW4kNaKf1xRWsPgbeOSttIYLtkjDSCaIFjnUFZCK4/mcnXVsJ9gFXCRo81RUO4HvzWQPt/wB62IncyGNkcUTfMXStzw4N1KnqN3Pbwhsbmm4jf6jY8Hbg75wOzNVuo1J2yZ32jo/uxbo5AS1zW4iozpXPsVhO5jWm4ZRrhhKzFv6hm1DOrCS29a5YXMeNskrRSrqV2kYeamoTY7m1lkMDHje5m9ocKB7TjjzotFd7ol1WxZu17dzCHNOoxCNqqLSMOJjJilpVpYaB1eNcCUmPqMBO18jX/mb5T3tPgq7Jk9WP2oR69tt3eo2iESEHMuuuTTuqS5wGFK+mwgalrfMa8ysU3ULqYU3emzSOIbG/DE96zjHPAozyxUqqWxTbJLzqUBzndgUGmqN3AYJiN111B/8Az4bGJ3kA3SvIoXGtdvYCskE8kIcYnFsjsNwz20xAPNUNCa1FSpa0AgjHgUsIeWaIb2W39F8IAfG1zXOI3Fwca0x0WaaaWaUzSuL5XUJec/grUaRiFDgKcxqhQGSwvJjEYH/ciOJa7Q8WnQpkVw5txFdOJl9LbRoIaQW5B3LsWanvUhrgQ4dyMCya7vqdzckZQxjFsTK0B1OKyGutVYgUrka5ckbTSoIPfihQMrsbtrTmhFDWuqEAW+p2eff3oOXt8EIQIjUeKDl3IQgZQ5J306+KEJMELf8AKc/1I4exQhADOHjn3KW/j2IQkUU+kZ69in2xQhMRX3IQhAj/2Q==]]
 
 svgz
+
 [[https://example.com][data:image/svg+xml;base64,H4sICPlxC2EAA3Rlc3Quc3ZnADWNwQ7CMAxD70j8Q5Q7a2FwQQ3/AllpqxU2tRUZf0/Q4PRs2bJdfQVYHvlZCWNr89kYEemk76YSzMFaa7SBEH0KsRHurUWQNLS46st2A+A4Fc4eeCE8ac7vlYXwqKitTKMnvOUrj3+7+430CPeUM2HxA4LRPfd9VH4Ao4HnzJsAAAA=]]
 
 * org-http-inline-image
 ** Path Part
 
 #+begin_src org
-[[https://raw.githubusercontent.com/misohena/org-cmenu/main/screenshot/org-cmenu-pretty.png]]
+: [[https://raw.githubusercontent.com/misohena/org-cmenu/main/screenshot/org-cmenu-pretty.png]]
 #+end_src
 
 [[https://raw.githubusercontent.com/misohena/org-cmenu/main/screenshot/org-cmenu-pretty.png]]
@@ -39,7 +41,7 @@ svgz
 ** Description Part
 
 #+begin_src org
-[[https://example.com][https://raw.githubusercontent.com/misohena/org-cmenu/main/screenshot/org-cmenu-pretty.png]]
+: [[https://example.com][https://raw.githubusercontent.com/misohena/org-cmenu/main/screenshot/org-cmenu-pretty.png]]
 #+end_src
 
 [[https://example.com][https://raw.githubusercontent.com/misohena/org-cmenu/main/screenshot/org-cmenu-pretty.png]]

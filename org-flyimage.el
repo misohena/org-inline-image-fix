@@ -27,6 +27,8 @@
 
 ;;; Code:
 
+(require 'org)
+
 ;;;; Minor Mode
 
 ;;;###autoload

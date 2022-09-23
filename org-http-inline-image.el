@@ -27,6 +27,7 @@
 
 ;;; Code:
 
+(require 'org)
 
 ;; Activate/Deactivate
 

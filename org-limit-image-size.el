@@ -26,6 +26,7 @@
 
 ;;; Code:
 
+(require 'org)
 
 ;;;; Image Size Setting
 
