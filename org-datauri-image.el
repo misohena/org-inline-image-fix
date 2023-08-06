@@ -26,235 +26,49 @@
 
 ;;; Code:
 
-(require 'org)
-(require 'org-element)
-
+(require 'org-better-inline-images)
 
 (defconst org-datauri-image-link-head-re
   "^image/\\(png\\|jpeg\\|gif\\|svg\\+xml\\);base64,"
   "Regexp that matches beginning of data URI.")
 
 (defun org-datauri-image-activate ()
+  (interactive)
   (org-datauri-image-activate-display)
   (org-datauri-image-activate-exporter))
 
 (defun org-datauri-image-deactivate ()
+  (interactive)
   (org-datauri-image-deactivate-display)
   (org-datauri-image-deactivate-exporter))
 
 
-;; Link Type
+;;;; Link Type
 
 
 (defun org-datauri-image-register-type ()
   (org-link-set-parameters "data"))
 
 
-;; Display Inline Images
+;;;; Display Inline Images
 
 
 (defun org-datauri-image-activate-display ()
-  "Enable to display data URI images."
+  "Enable display of data URI images."
   (org-datauri-image-register-type)
-  (advice-add 'org-display-inline-images :around
-              'org-datauri-image--display-inline-images))
+  (org-better-inline-images-activate)
+  (org-better-inline-images-add-type "data"
+                                     #'org-datauri-image--update-data-link))
 
 (defun org-datauri-image-deactivate-display ()
-  (advice-remove 'org-display-inline-images
-                 'org-datauri-image--display-inline-images))
+  ;;(org-better-inline-images-deactivate) ;;May be used elsewhere
+  (org-better-inline-images-remove-type "data"))
 
-;; Changes:
-;;  (defun org-display-inline-images (&optional include-linked refresh beg end)
-;; ...
-;; ...
-;;-  	       (file-extension-re (image-file-name-regexp))
-;;+  	       (file-extension-re (format "\\(\\(%s\\)\\|\\(%s\\)\\)"
-;;+  					  org-datauri-image-link-head-re ;;Add data uri pattern
-;;+  					  (image-file-name-regexp)))
-;;  	       (link-abbrevs (mapcar #'car
-;;  				     (append org-link-abbrev-alist-local
-;;+ 					     '(("data" . "data:%s")) ;;Add data type
-;;  					     org-link-abbrev-alist)))
-;; ...
-;;  	       (file-types-re
-;;-  		(format "\\[\\[\\(?:file%s:\\|attachment:\\|[./~]\\)\\|\\]\\[\\(<?file:\\)"
-;;+  		(format "\\[\\[\\(?:file%s:\\|attachment:\\|[./~]\\)\\|\\]\\[\\(<?file:\\|data:\\)" ;;Add
-;; ...
-;; ...
-;;  		      (and (or (equal "file" linktype)
-;;+  			       (equal "data" linktype) ;;Add data type
-;;                             (equal "attachment" linktype))
-;;  			   (org-element-property :path link)))
-;; ...
-;; ...
-;;  		     (t
-;;  		      (org-with-point-at inner-start
-;;  			(and (looking-at
-;;  			      (if (char-equal ?< (char-after inner-start))
-;;  				  org-link-angle-re
-;;-  				org-link-plain-re))
-;;+  				(org-data-url-image-link-plain-re))) ;;Add
-;;  			     ;; File name must fill the whole
-;;  			     ;; description.
-;;  			     (= (org-element-property :contents-end link)
-;;  				(match-end 0))
-;;-  			     (match-string 2)))))))
-;;+  			     (progn (setq linktype (match-string 1))
-;;+  			            (match-string 2))))))))
-;; ...
-;; ...
-;;  		(let ((file (if (equal "attachment" linktype)
-;;  				(progn
-;;                                (require 'org-attach)
-;;  				  (ignore-errors (org-attach-expand path)))
-;;-                            (expand-file-name path))))
-;;+                            (if (equal "data" linktype) path (expand-file-name path))))) ;;Avoid expand
-;;-  		  (when (and file (file-exists-p file))
-;;+  		  (when (and file (or (equal "data" linktype) (file-exists-p file))) ;;Avoid file checking
-;;
-;;  (defun org--create-inline-image (file width)
-;;+... Add data uri support
-(defun org-datauri-image--display-inline-images (orig-fun &optional include-linked &rest rest)
-  ":around advice to support data URI for org-display-inline-images function."
-  ;; Based on org-mode version 9.4.6
-  (let* (;; Functions before overridden
-         (old-format (symbol-function 'format))
-         (old-org-element-lineage (symbol-function 'org-element-lineage))
-         (old-plist-get (symbol-function 'plist-get))
-         (old-looking-at (symbol-function 'looking-at))
-         (old-expand-file-name (symbol-function 'expand-file-name))
-         (old-file-exists-p (symbol-function 'file-exists-p))
-         (old-org--create-inline-image (symbol-function 'org--create-inline-image))
-         ;; Regexp that matches file-types-re in org-display-inline-images
-         ;; Original string:
-         ;; "\\[\\[\\(?:file%s:\\|attachment:\\|[./~]\\)\\|\\]\\[\\(<?file:\\)"
-         (file-types-re-re
-          (concat
-           "\\`"
-           (regexp-quote "\\[\\[\\(?:file")
-           ".*"
-           (regexp-quote ":\\|attachment:\\|[./~]\\)\\|\\]\\[\\(<?")
-           "\\(" "file:\\(?:\\\\|[a-z0-9]+:\\)*" "\\)" ;; Replacement point (\\1)
-           (regexp-quote "\\)")
-           "\\'"))
-         ;; Add `data' type to file-types-re
-         (org-link-abbrev-alist (cons '("data" . "data:%s")
-                                      org-link-abbrev-alist))
-         ;; Regexp that matches data URI and image file name
-         (image-path-re (format "\\(\\(%s\\)\\|\\(%s\\)\\)"
-                                org-datauri-image-link-head-re
-                                (image-file-name-regexp)))
-         (org-link-plain-re (org-data-url-image-link-plain-re))
-         ;; Link Element
-         link
-         link-type
-         link-contents-begin
-         link-contents-end
-         ;; Flags
-         target-type-p
-         needs-falsify-type-p
-         needs-check-description-p)
-
-    (cl-letf
-        (;; Return the regexp that matches data uri and image file
-         ((symbol-function 'image-file-name-regexp)
-          (lambda ()
-            image-path-re))
-         ;; Replace link type in description part of file-types-re
-         ((symbol-function 'format)
-          (lambda (string &rest objects)
-            (apply old-format
-                   (save-match-data
-                     (if (string-match file-types-re-re string)
-                         (replace-match
-                          (funcall old-format
-                                   "%s\\|%s"
-                                   (match-string 1 string)
-                                   "data:") ;;Add type
-                          t t string 1)
-                       string))
-                   objects)))
-         ;; Save link element
-         ((symbol-function 'org-element-lineage)
-          (lambda (datum &optional types with-self)
-            (let ((result (funcall old-org-element-lineage
-                                   datum types with-self)))
-              (when (and (equal types '(link)) with-self)
-                (setq link result)
-                (setq needs-falsify-type-p t))
-              result)))
-         ;; Retrieve PROP of PLIST and falsify :type property "data" to "file"
-         ((symbol-function 'plist-get)
-          (lambda (plist prop)
-            ;; call from org-element-property
-            ;; NOTE: org-element-property is defsubst
-            (let ((result (funcall old-plist-get plist prop)))
-              (if (and needs-falsify-type-p
-                       (eq plist (nth 1 link))
-                       (eq prop :type))
-                  ;; link's :type property
-                  (progn
-                    ;; first call only
-                    (setq needs-falsify-type-p nil)
-                    ;; save link properties
-                    ;; see: org-element-property
-                    (setq link-type
-                          (funcall old-plist-get (nth 1 link) :type))
-                    (setq link-contents-begin
-                          (funcall old-plist-get (nth 1 link) :contents-begin))
-                    (setq link-contents-end
-                          (funcall old-plist-get (nth 1 link) :contents-end))
-                    ;; check type
-                    (setq target-type-p (equal link-type "data"))
-                    ;; check needs hook looking-at
-                    (setq needs-check-description-p
-                          (and
-                           link
-                           link-contents-begin
-                           (not include-linked)
-                           (match-beginning 1)))
-                    ;;falsify type
-                    (if target-type-p "file" result))
-                ;; other properties
-                result))))
-         ;; Check description part
-         ((symbol-function 'looking-at)
-          (lambda (regexp)
-            (let ((result (funcall old-looking-at regexp)))
-              (when needs-check-description-p
-                (setq needs-check-description-p nil)
-                ;; when match link pattern to whole description
-                (when (and result
-                           (= link-contents-end (match-end 0)))
-                  ;; update link type
-                  (setq link-type (match-string 1))
-                  (setq target-type-p (equal link-type "data"))))
-              result)))
-         ;; If current type is data, do nothing, otherwise expand filename
-         ((symbol-function 'expand-file-name)
-          (lambda (name &optional dir)
-            (if target-type-p name (funcall old-expand-file-name name dir))))
-         ;; If current type is data, return t, otherwise call file-exists-p
-         ((symbol-function 'file-exists-p)
-          (lambda (file)
-            (if target-type-p t (funcall old-file-exists-p file))))
-         ;; create-image function that supports data uris
-         ((symbol-function 'org--create-inline-image)
-          (lambda (file width)
-            (if (and target-type-p
-                     (string-match org-datauri-image-link-head-re file))
-                (create-image
-                 (base64-decode-string (substring file (match-end 0)) nil)
-                 (or
-                  (and (image-type-available-p 'imagemagick)
-                       width 'imagemagick) ;;obsolete
-                  (org-datauri-image-mime-to-type (match-string 1 file)))
-                 t
-                 :width width)
-              (funcall old-org--create-inline-image file width)))))
-
-      ;; Call original org-display-inline-images
-      (apply orig-fun include-linked rest))))
+(defun org-datauri-image--update-data-link (link _linktype path)
+  (when (string-match org-datauri-image-link-head-re path)
+    (let ((data (ignore-errors (base64-decode-string (substring path (match-end 0)) nil)))
+          (data-type (org-datauri-image-mime-to-type (match-string 1 path))))
+      (org-better-inline-images--update-overlay link data data-type))))
 
 (defun org-datauri-image-mime-to-type (image-mime)
   (alist-get
@@ -266,7 +80,8 @@
    nil nil #'string=))
 
 
-;; Export
+;;;; Export
+
 
 (defvar org-html-inline-image-rules)
 

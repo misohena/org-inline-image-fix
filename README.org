@@ -84,3 +84,30 @@ Display HTTP/HTTPS image link inline. All images are download every time.
 
 ** Development Note
 http://misohena.jp/blog/2012-03-11-120311a.html
+
+* License
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+** About registration to package distribution systems
+
+For various reasons, it is difficult for me to register packages with the package distribution systems (package archives).
+
+If you wish to register this package with the package archives, please feel free to fork this repository and proceed with the registration and maintenance on your own. No permission is required.
+
+The reasons are that communication in English is a burden, it is not necessary for me, It is fair for those who need it to bear the cost, I want to reserve the right to develop in a free coding style, etc. .
+
+If someone else creates a better solution, I will gladly use it. Ideally, the original project should be improved so that a need for this does not arise, but please don't expect me to negotiate for that.
+
+From someone who took hours using translation software to write this section.
