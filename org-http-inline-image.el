@@ -49,11 +49,20 @@
 
 ;;;; Display Inline Images
 
+(defvar org-http-inline-image--file-name-regexp
+  (concat "\\."
+          (regexp-opt '("gif" "jpg" "jpeg" "png" "svg" "webp"
+                        ;;"apng" "avif"
+                        ;;"ico" "bmp" "tiff" "tif"
+                        ))
+          "\\'"))
+
 (defun org-http-inline-image--update-http-link (link linktype path)
-  (when-let* ((data (org-http-inline-image-retrieve-url (concat
-                                                         linktype ":" path)))
-              (data-type (ignore-errors (image-type data nil t))))
-    (org-better-inline-images--update-overlay link data data-type)))
+  (when (string-match-p org-http-inline-image--file-name-regexp path)
+    (when-let* ((data (org-http-inline-image-retrieve-url (concat
+                                                           linktype ":" path)))
+                (data-type (ignore-errors (image-type data nil t))))
+      (org-better-inline-images--update-overlay link data data-type))))
 
 (defun org-http-inline-image-retrieve-url (url)
   (let* ((buf (url-retrieve-synchronously url))
