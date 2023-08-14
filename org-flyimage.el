@@ -88,13 +88,15 @@
            do (org-display-inline-remove-overlay ov t nil nil)))
 
 (defun org-flyimage-remove-flyspell-overlays-in (old-func beg end)
-  (prog1 (funcall old-func beg end)
-    (when org-flyimage-mode
-      (if t ;;(not org-flyimage-in-activate-links) ;;in t, reflect #+attr_html: :width immediately. but slow
-          (org-flyimage-remove-inline-images-in beg end))
+  (save-match-data ;; Implementations of org-activate-links prior to
+    ;; Org 9.3 required saving match data.
+    (prog1 (funcall old-func beg end)
+      (when org-flyimage-mode
+        (if t ;;(not org-flyimage-in-activate-links) ;;in t, reflect #+attr_html: :width immediately. but slow
+            (org-flyimage-remove-inline-images-in beg end))
 
-      (when org-flyimage-in-activate-links
-        (org-display-inline-images nil t beg end)))))
+        (when org-flyimage-in-activate-links
+          (org-display-inline-images nil t beg end))))))
 
 
 (provide 'org-flyimage)

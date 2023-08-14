@@ -62,12 +62,18 @@
 
 
 (defun org-better-inline-images-add-type (type updator)
-  (setf (alist-get type org-better-inline-images-link-types nil nil #'equal)
-        updator))
+  ;; TESTFN arg of alist-get requires Emacs 26 or later
+  ;; (setf (alist-get type org-better-inline-images-link-types nil nil #'equal)
+  ;;       updator)
+  (let ((cell (assoc type org-better-inline-images-link-types)))
+    (if cell
+        (setcdr cell updator)
+      (push (cons type updator) org-better-inline-images-link-types))))
 
 (defun org-better-inline-images-remove-type (type)
-  (setf (alist-get type org-better-inline-images-link-types nil t #'equal)
-        nil))
+  (setq org-better-inline-images-link-types
+        (seq-remove (lambda (elt) (equal (car elt) type))
+                    org-better-inline-images-link-types)))
 
 
 ;;;; Alternative to org-display-inline-images Function
@@ -135,12 +141,20 @@ buffer boundaries with possible narrowing."
               ;; Accept some punctuation characters for data uri
               (replace-regexp-in-string (regexp-quote "\\(?:[^[:punct:]")
                                         "\\(?:[=]\\|[^[:punct:]"
-                                        org-link-plain-re t t))
+                                        (cond
+                                         ((boundp 'org-link-plain-re)
+                                          org-link-plain-re) ;;Org 9.3~
+                                         ((boundp 'org-plain-link-re)
+                                          org-plain-link-re)
+                                         ;; This will never be used.
+                                         (t "\\(?:\\<\\(?:\\(data\\|file\\|https?\\)\\):\\(\\(?:[^][ \t\n()<>]\\|(\\(?:[^][ \t\n()<>]\\|([^][ \t\n()<>]*)\\)*)\\)+\\(?:[^[:punct:] \t\n]\\|/\\|(\\(?:[^][ \t\n()<>]\\|([^][ \t\n()<>]*)\\)*)\\)\\)\\)"))
+                                        t t))
              (link-re (org-better-inline-images--link-regexp))
              (case-fold-search t))
         (while (re-search-forward link-re end t)
-          (when-let ((link (org-element-lineage (org-element-context)
-                                                '(link) t)))
+          (when-let ((link (org-element-lineage ;; Org8.3~
+                            (org-element-context)
+                            '(link) t)))
             (let* ((desc-begin (org-element-property :contents-begin link))
                    (used-ov
                     (cond
@@ -343,10 +357,11 @@ See `org-better-inline-images--update-link'"
 (defun org-better-inline-images-activate ()
   "Replace `org-display-inline-images' with `org-better-inline-images-display'."
   (interactive)
-  (advice-add 'org-display-inline-images
-              :around
-              #'org-better-inline-images-display--advice
-              '((depth . 100))))
+  (when (version<= "8.3" org-version) ;; org-element-lineage: Org 8.3 or later
+    (advice-add 'org-display-inline-images
+                :around
+                #'org-better-inline-images-display--advice
+                '((depth . 100)))))
 
 (defun org-better-inline-images-deactivate ()
   "Cancel the effect of `org-better-inline-images-activate'."
