@@ -190,8 +190,22 @@ buffer boundaries with possible narrowing."
               (seq-difference org-inline-image-overlays unused-overlays #'eq))
         ))))
 
+(defconst org-better-inline-images--remove-with-args
+  (version<= "9.6" org-version))
+
 (defun org-better-inline-images--refresh (beg end)
-  (org-remove-inline-images beg end)
+  (if org-better-inline-images--remove-with-args
+      (org-remove-inline-images beg end)
+    ;; If org-version < 9.6,
+    ;; (org-remove-inline-images) missing beg and end arguments.
+    (dolist (ov (overlays-in beg end))
+      (when
+          ;; Which is better?
+          ;;(overlay-get ov 'org-image-overlay)
+          (memq ov org-inline-image-overlays)
+        (delete-overlay ov)
+        (setq org-inline-image-overlays
+              (delq ov org-inline-image-overlays)))))
   (when (fboundp 'clear-image-cache) (clear-image-cache)))
 
 (defun org-better-inline-images--link-types-regexp ()
@@ -265,7 +279,8 @@ See `org-better-inline-images--update-link'"
       (let ((image (org-better-inline-images--create-inline-image
                     file-or-data
                     data-type
-                    (org-display-inline-image--width link))))
+                    (and (fboundp 'org-display-inline-image--width) ;;Org9.6~
+                         (org-display-inline-image--width link)))))
         (when image
           (org-better-inline-images--make-overlay link image))))))
 

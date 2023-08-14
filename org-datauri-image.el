@@ -47,7 +47,11 @@
 
 
 (defun org-datauri-image-register-type ()
-  (org-link-set-parameters "data"))
+  (cond
+   ((fboundp 'org-link-set-parameters) ;;Org 9.0 or later
+    (org-link-set-parameters "data"))
+   ((fboundp 'org-add-link-type) ;; before Org 9.0
+    (org-add-link-type "data"))))
 
 
 ;;;; Display Inline Images
