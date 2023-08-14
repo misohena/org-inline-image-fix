@@ -314,6 +314,7 @@ See `org-better-inline-images--update-link'"
                                                       width)
   (when file-or-data
     (if data-type
+        ;; Data
         (create-image file-or-data
                       (or
                        (and (image-type-available-p 'imagemagick)
@@ -321,7 +322,16 @@ See `org-better-inline-images--update-link'"
                        data-type)
                       t
                       :width width :scale 1)
-      (org--create-inline-image file-or-data width))))
+      ;; File
+      (if (fboundp 'org--create-inline-image) ;; Org 9.4 or later
+          (org--create-inline-image file-or-data width)
+        ;; Before Org 9.4
+        ;; (Emacs 27.1 includes Org 9.3)
+        (create-image file-or-data
+                      (and (image-type-available-p 'imagemagick)
+                           width 'imagemagick)
+                      nil
+                      :width width :scale 1)))))
 
 
 ;;;; Overriding org-display-inline-images
