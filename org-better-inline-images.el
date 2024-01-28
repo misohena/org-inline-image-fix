@@ -318,19 +318,21 @@ See `org-better-inline-images--update-link'"
 (defun org-better-inline-images--update-file-link (link linktype path)
   "Image updator for file type links.
 See `org-better-inline-images--update-link'"
-  (when (and
-         path
-         (org-better-inline-images--image-file-name-p path))
-    ;; Check remote file
-    (if (and (file-remote-p path)
-             ;; Org 9.4~
-             (boundp 'org-display-remote-inline-images))
-        ;; Update remote file link
-        (org-better-inline-images--update-remote-file-link link linktype path)
-      ;; Update local file link
-      (let ((file (expand-file-name path)))
-        (when (file-exists-p file)
-          (org-better-inline-images--update-overlay link file nil))))))
+  (when path
+    ;; Expand environment variables. (Org 9.7~)
+    (setq path (substitute-in-file-name path))
+
+    (when (org-better-inline-images--image-file-name-p path)
+      ;; Check remote file
+      (if (and (file-remote-p path)
+               ;; Org 9.4~
+               (boundp 'org-display-remote-inline-images))
+          ;; Update remote file link
+          (org-better-inline-images--update-remote-file-link link linktype path)
+        ;; Update local file link
+        (let ((file (expand-file-name path)))
+          (when (file-exists-p file)
+            (org-better-inline-images--update-overlay link file nil)))))))
 
 (defun org-better-inline-images--update-remote-file-link (link _linktype path)
   ;; Org 9.4~
