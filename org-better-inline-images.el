@@ -52,7 +52,29 @@
     ))
 
 (defvar org-better-inline-images--image-file-name-re nil
-  "Cache of (image-file-name-regexp).")
+  "Cache of (org-better-inline-images-image-file-name-regexp).")
+
+(defcustom org-better-inline-images-image-file-name-regexp nil
+  "A regular expression that matches the image file name to be
+displayed inline."
+  :group 'org-better-inline-images
+  :type '(choice
+          (const :tag "Use `image-file-name-regexp'" nil)
+          (string :tag "A regexp string")
+          (function :tag "A function that returns a regexp string"
+                    :value image-file-name-regexp)
+          (repeat :tag "A list of file extension"
+                  :value ("gif" "jpg" "jpeg" "png" "svg" "webp")
+                  (string :tag ""))))
+
+(defcustom org-better-inline-images-image-file-name-p nil
+  "A predicate that determines whether the image file name is to
+ be displayed inline."
+  :group 'org-better-inline-images
+  :type '(choice
+          (const :tag "Match `org-better-inline-images-image-file-name-regexp'"
+                 nil)
+          (function :tag "Predicate")))
 
 (defvar org-better-inline-images--link-plain-re nil
   "`org-link-plain-re' with a little modification.")
@@ -74,6 +96,26 @@
   (setq org-better-inline-images-link-types
         (seq-remove (lambda (elt) (equal (car elt) type))
                     org-better-inline-images-link-types)))
+
+
+;;;; Image File Name Predicate
+
+
+(defun org-better-inline-images--image-file-name-regexp ()
+  (pcase org-better-inline-images-image-file-name-regexp
+    ('nil (image-file-name-regexp))
+    ((and (pred stringp) regexp) regexp)
+    ((and (pred functionp) fun) (funcall fun))
+    ((and (pred listp) extensions)
+     (concat "\\."
+             (regexp-opt (append (mapcar #'upcase extensions) extensions) t)
+             "\\'"))
+    (_ (image-file-name-regexp))))
+
+(defun org-better-inline-images--image-file-name-p (path)
+  (if (functionp org-better-inline-images-image-file-name-p)
+      (funcall org-better-inline-images-image-file-name-p path)
+    (string-match-p org-better-inline-images--image-file-name-re path)))
 
 
 ;;;; Alternative to org-display-inline-images Function
@@ -102,7 +144,7 @@ conventions:
   1. The link has no description part and its type is one of
      those listed in the `org-better-inline-images-link-types'
      variable. If the type is file or attachment, the filename
-     must match `image-file-name-regexp'.
+     must match `org-better-inline-images-image-file-name-regexp'.
 
   2. Its description consists in a single link of the previous
      type.  In this case, that link must be a well-formed plain
@@ -136,7 +178,7 @@ buffer boundaries with possible narrowing."
                                (lambda (ov) (overlay-get ov 'org-image-overlay))
                                (overlays-in beg end)))
              (org-better-inline-images--image-file-name-re
-              (image-file-name-regexp))
+              (org-better-inline-images--image-file-name-regexp))
              (org-better-inline-images--link-plain-re
               ;; Accept some punctuation characters for data uri
               (replace-regexp-in-string (regexp-quote "\\(?:[^[:punct:]")
@@ -266,7 +308,7 @@ See `org-better-inline-images--update-link'"
 See `org-better-inline-images--update-link'"
   (when (and
          path
-         (string-match-p org-better-inline-images--image-file-name-re path))
+         (org-better-inline-images--image-file-name-p path))
     (let ((file (expand-file-name path)))
       (when (file-exists-p file)
         (org-better-inline-images--update-overlay link file nil)))))
