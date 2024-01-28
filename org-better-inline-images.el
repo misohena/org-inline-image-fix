@@ -315,15 +315,46 @@ See `org-better-inline-images--update-link'"
     (let ((file (ignore-errors (org-attach-expand path))))
       (org-better-inline-images--update-file-link link "file" file))))
 
-(defun org-better-inline-images--update-file-link (link _linktype path)
+(defun org-better-inline-images--update-file-link (link linktype path)
   "Image updator for file type links.
 See `org-better-inline-images--update-link'"
   (when (and
          path
          (org-better-inline-images--image-file-name-p path))
-    (let ((file (expand-file-name path)))
-      (when (file-exists-p file)
-        (org-better-inline-images--update-overlay link file nil)))))
+    ;; Check remote file
+    (if (and (file-remote-p path)
+             ;; Org 9.4~
+             (boundp 'org-display-remote-inline-images))
+        ;; Update remote file link
+        (org-better-inline-images--update-remote-file-link link linktype path)
+      ;; Update local file link
+      (let ((file (expand-file-name path)))
+        (when (file-exists-p file)
+          (org-better-inline-images--update-overlay link file nil))))))
+
+(defun org-better-inline-images--update-remote-file-link (link _linktype path)
+  ;; Org 9.4~
+  (let* ((file path)
+         (data
+          (pcase org-display-remote-inline-images
+            ;; __ Copy from org--create-inline-image in org.el
+            (`download (with-temp-buffer
+                         (set-buffer-multibyte nil)
+                         (insert-file-contents-literally file)
+                         (buffer-string)))
+            ((or `cache `t)
+             (let ((revert-without-query '(".")))
+               (with-current-buffer (find-file-noselect file)
+                 (buffer-string))))
+            (`skip nil)
+            (other
+             (message "Invalid value of `org-display-remote-inline-images': %S"
+                      other)
+             nil)
+            ;; ^^ Copy from org--create-inline-image in org.el
+            )))
+    (when data
+      (org-better-inline-images--update-overlay link data (image-type path)))))
 
 (defun org-better-inline-images--update-overlay (link
                                                  file-or-data
