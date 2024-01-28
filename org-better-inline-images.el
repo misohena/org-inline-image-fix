@@ -51,9 +51,6 @@
     ;; ("https" . org-better-inline-images--update-http-link)
     ))
 
-(defvar org-better-inline-images--image-file-name-re nil
-  "Cache of (org-better-inline-images-image-file-name-regexp).")
-
 (defcustom org-better-inline-images-image-file-name-regexp nil
   "A regular expression that matches the image file name to be
 displayed inline."
@@ -75,6 +72,10 @@ displayed inline."
           (const :tag "Match `org-better-inline-images-image-file-name-regexp'"
                  nil)
           (function :tag "Predicate")))
+
+
+(defvar org-better-inline-images--image-file-name-re nil
+  "Cache of (org-better-inline-images-image-file-name-regexp).")
 
 (defvar org-better-inline-images--link-plain-re nil
   "`org-link-plain-re' with a little modification.")
@@ -116,6 +117,27 @@ displayed inline."
   (if (functionp org-better-inline-images-image-file-name-p)
       (funcall org-better-inline-images-image-file-name-p path)
     (string-match-p org-better-inline-images--image-file-name-re path)))
+
+
+;;;; Plain Link Regexp
+
+
+(defun org-better-inline-images--link-plain-regexp ()
+  "Generates a regular expression to determine whether the link
+description part is a plain link.
+
+Include = to support Data URIs."
+  ;; Accept some punctuation characters for data uri
+  (replace-regexp-in-string (regexp-quote "\\(?:[^[:punct:]")
+                            "\\(?:[=]\\|[^[:punct:]"
+                            (cond
+                             ((boundp 'org-link-plain-re)
+                              org-link-plain-re) ;;Org 9.3~
+                             ((boundp 'org-plain-link-re)
+                              org-plain-link-re)
+                             ;; This will never be used.
+                             (t "\\(?:\\<\\(?:\\(data\\|file\\|https?\\)\\):\\(\\(?:[^][ \t\n()<>]\\|(\\(?:[^][ \t\n()<>]\\|([^][ \t\n()<>]*)\\)*)\\)+\\(?:[^[:punct:] \t\n]\\|/\\|(\\(?:[^][ \t\n()<>]\\|([^][ \t\n()<>]*)\\)*)\\)\\)\\)"))
+                            t t))
 
 
 ;;;; Alternative to org-display-inline-images Function
@@ -180,17 +202,7 @@ buffer boundaries with possible narrowing."
              (org-better-inline-images--image-file-name-re
               (org-better-inline-images--image-file-name-regexp))
              (org-better-inline-images--link-plain-re
-              ;; Accept some punctuation characters for data uri
-              (replace-regexp-in-string (regexp-quote "\\(?:[^[:punct:]")
-                                        "\\(?:[=]\\|[^[:punct:]"
-                                        (cond
-                                         ((boundp 'org-link-plain-re)
-                                          org-link-plain-re) ;;Org 9.3~
-                                         ((boundp 'org-plain-link-re)
-                                          org-plain-link-re)
-                                         ;; This will never be used.
-                                         (t "\\(?:\\<\\(?:\\(data\\|file\\|https?\\)\\):\\(\\(?:[^][ \t\n()<>]\\|(\\(?:[^][ \t\n()<>]\\|([^][ \t\n()<>]*)\\)*)\\)+\\(?:[^[:punct:] \t\n]\\|/\\|(\\(?:[^][ \t\n()<>]\\|([^][ \t\n()<>]*)\\)*)\\)\\)\\)"))
-                                        t t))
+              (org-better-inline-images--link-plain-regexp))
              (link-re (org-better-inline-images--link-regexp))
              (case-fold-search t))
         (while (re-search-forward link-re end t)
