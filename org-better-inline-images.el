@@ -405,14 +405,19 @@ Note: This has nothing to do with org-limit-image-size.el.
     ))
 
 (defun org-better-inline-images--make-overlay (link image)
-  (let ((ov (make-overlay
-             (org-element-property :begin link)
-             (save-excursion
-               (goto-char
-                (org-element-property :end link))
-               (skip-chars-backward " \t")
-               (point)))))
-    ;; FIXME: See bug#59902.  We cannot rely
+  ;; __ Copy from org--create-inline-image in org.el
+  (let* ((align (when (fboundp 'org-image--align) ;; Org 9.7~
+                  (org-image--align link)))
+         (ov (make-overlay
+              (org-element-property :begin link)
+              (save-excursion
+                (goto-char
+                 (org-element-property :end link))
+                (when (or (null align)
+                          (not (eolp)))
+                  (skip-chars-backward " \t"))
+                (point)))))
+    ;; See bug#59902.  We cannot rely
     ;; on Emacs to update image if the file
     ;; has changed.
     (ignore-errors
@@ -425,9 +430,20 @@ Note: This has nothing to do with org-limit-image-size.el.
      (list 'org-display-inline-remove-overlay))
     (when (boundp 'image-map)
       (overlay-put ov 'keymap image-map))
+    (when align
+      (overlay-put
+       ov 'before-string
+       (propertize
+        " " 'face 'default
+        'display
+        (pcase align
+          ("center" `(space :align-to (- center (0.5 . ,image))))
+          ("right"  `(space :align-to (- right ,image)))))))
     (push ov org-inline-image-overlays)
     ;; Return the new overlay
-    ov))
+    ov)
+  ;; ^^ Copy from org--create-inline-image in org.el
+  )
 
 (defun org-better-inline-images--create-inline-image (file-or-data
                                                       data-type
