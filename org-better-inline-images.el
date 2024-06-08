@@ -385,6 +385,25 @@ See `org-better-inline-images--update-link'"
         (when image
           (org-better-inline-images--make-overlay link image))))))
 
+(defun org-better-inline-images--max-width ()
+  "Calculate the maximum width of the image according to
+`org-image-max-width'.
+
+Note: This has nothing to do with org-limit-image-size.el.
+ org-limit-image-size works independently of this."
+  (when (boundp 'org-image-max-width) ;; Org 9.7~
+    ;; __ Copy from org--create-inline-image in org.el
+    (pcase org-image-max-width
+      (`fill-column (* fill-column (frame-char-width (selected-frame))))
+      (`window (window-width nil t))
+      ((pred integerp) org-image-max-width)
+      ((pred floatp) (floor (* org-image-max-width (window-width nil t))))
+      (`nil nil)
+      (_ (error "Unsupported value of `org-image-max-width': %S"
+                org-image-max-width)))
+    ;; ^^ Copy from org--create-inline-image in org.el
+    ))
+
 (defun org-better-inline-images--make-overlay (link image)
   (let ((ov (make-overlay
              (org-element-property :begin link)
@@ -428,11 +447,18 @@ See `org-better-inline-images--update-link'"
           (org--create-inline-image file-or-data width)
         ;; Before Org 9.4
         ;; (Emacs 27.1 includes Org 9.3)
-        (create-image file-or-data
-                      (and (image-type-available-p 'imagemagick)
-                           width 'imagemagick)
-                      nil
-                      :width width :scale 1)))))
+        (apply #'create-image
+               file-or-data
+               ;; TYPE
+               (and (image-type-available-p 'imagemagick) width 'imagemagick)
+               ;;DATA-P
+               nil
+               ;; PROPS
+               (nconc
+                (list :scale 1
+                      :width width)
+                (when-let ((max-width (org-better-inline-images--max-width)))
+                  (list :max-width max-width))))))))
 
 
 ;;;; Overriding org-display-inline-images
