@@ -29,6 +29,27 @@
 
 (require 'org)
 
+;;;; Customization Variables
+
+(defcustom org-flyimage-link-re 'org-link-bracket-re
+  "A regular expression that matches links to be auto-displayed."
+  :group 'org-flyimage
+  :type '(choice
+          (const :tag "All links" nil)
+          (const :tag "Bracket links only" org-link-bracket-re)
+          (variable :tag "Specify by variable" org-link-any-re)
+          (regexp :tag "Regexp")))
+
+(defun org-flyimage-link-re ()
+  (let ((v org-flyimage-link-re))
+    (cond
+     ((and (symbolp v) (boundp v))
+      (symbol-value v))
+     ((stringp v)
+      v)
+     (t
+      org-link-any-re))))
+
 ;;;; Minor Mode
 
 ;;;###autoload
@@ -107,7 +128,8 @@
         (when org-flyimage-in-activate-links
           (cond
            ((fboundp 'org-link-preview-region) ;; Org9.8~
-            (org-link-preview-region nil t beg end))
+            (let ((org-link-any-re (org-flyimage-link-re)))
+              (org-link-preview-region nil t beg end)))
            ((fboundp 'org-display-inline-images) ;; ~Org9.7
             (org-display-inline-images nil t beg end))))))))
 
