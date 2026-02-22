@@ -162,8 +162,9 @@ Include = to support Data URIs."
 (defvar org-better-inline-images--current-overlay nil)
 
 (defun org-better-inline-images--preview-link (updator ov path link)
-  (let ((org-better-inline-images--current-overlay ov))
-    (funcall updator link (org-element-property :type link) path)))
+  (when (display-graphic-p)
+    (let ((org-better-inline-images--current-overlay ov))
+      (funcall updator link (org-element-property :type link) path))))
 
 (defun org-better-inline-images--update-overlay (link
                                                  file-or-data
