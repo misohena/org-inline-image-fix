@@ -47,7 +47,11 @@
 
    ;; Turn off
    (t
-    (org-remove-inline-images))))
+    (cond
+     ((fboundp 'org-link-preview-clear) ;; Org9.8~
+      (org-link-preview-clear))
+     ((fboundp 'org-remove-inline-images) ;; ~Org9.7
+      (org-remove-inline-images))))))
 
 ;;;; Global Hooks
 
@@ -80,12 +84,17 @@
     (funcall old-func limit)))
 
 (defun org-flyimage-remove-inline-images-in (beg end)
-  (cl-loop for ov in org-inline-image-overlays
-           if (let ((ovbeg (overlay-start ov))
-                    (ovend (overlay-end ov)))
-                (and (numberp ovbeg) (numberp ovend)
-                     (< ovbeg end) (> ovend beg)))
-           do (org-display-inline-remove-overlay ov t nil nil)))
+  (cond
+   ((fboundp 'org-link-preview-clear) ;; Org9.8~
+    (org-link-preview-clear beg end))
+   ((and (boundp 'org-inline-image-overlays)
+         (fboundp 'org-display-inline-remove-overlay)) ;; ~Org9.7
+    (cl-loop for ov in org-inline-image-overlays
+             if (let ((ovbeg (overlay-start ov))
+                      (ovend (overlay-end ov)))
+                  (and (numberp ovbeg) (numberp ovend)
+                       (< ovbeg end) (> ovend beg)))
+             do (org-display-inline-remove-overlay ov t nil nil)))))
 
 (defun org-flyimage-remove-flyspell-overlays-in (old-func beg end)
   (save-match-data ;; Implementations of org-activate-links prior to
@@ -96,7 +105,11 @@
             (org-flyimage-remove-inline-images-in beg end))
 
         (when org-flyimage-in-activate-links
-          (org-display-inline-images nil t beg end))))))
+          (cond
+           ((fboundp 'org-link-preview-region) ;; Org9.8~
+            (org-link-preview-region nil t beg end))
+           ((fboundp 'org-display-inline-images) ;; ~Org9.7
+            (org-display-inline-images nil t beg end))))))))
 
 
 (provide 'org-flyimage)

@@ -61,13 +61,21 @@ If WIDTH-P is non-nil, return width, otherwise return height."
 
 (defun org-limit-image-size-activate ()
   (interactive)
-  (advice-add #'org-display-inline-images :around
-              #'org-limit-image-size--org-display-inline-images))
+  (when (fboundp 'org-link-preview-region) ;; Org9.8~
+    (advice-add #'org-link-preview-region :around
+                #'org-limit-image-size--org-display-inline-images))
+  (when (fboundp 'org-display-inline-images) ;; ~Org9.7
+    (advice-add #'org-display-inline-images :around
+                #'org-limit-image-size--org-display-inline-images)))
 
 (defun org-limit-image-size-deactivate ()
   (interactive)
-  (advice-remove #'org-display-inline-images
-                 #'org-limit-image-size--org-display-inline-images))
+  (when (fboundp 'org-link-preview-region) ;; Org9.8~
+    (advice-remove #'org-link-preview-region
+                   #'org-limit-image-size--org-display-inline-images))
+  (when (fboundp 'org-display-inline-images) ;; ~Org9.7
+    (advice-remove #'org-display-inline-images
+                   #'org-limit-image-size--org-display-inline-images)))
 
 
 ;;;; Override Functions
