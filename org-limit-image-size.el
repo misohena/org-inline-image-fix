@@ -56,6 +56,71 @@ If WIDTH-P is non-nil, return width, otherwise return height."
       limit-size)))
 
 
+;;;; Respect Org-mode Calculated Width
+
+
+(defcustom org-limit-image-size-respect-org-width nil
+  "Whether to skip the maximum size limit when org-mode has already
+computed a display width for an image.
+
+Org-mode may determine an image's display width in advance, based on
+`org-image-actual-width' or a :width attribute given via #+ATTR_ORG,
+#+ATTR_HTML, etc.  When this variable is non-nil and org-mode has
+determined such a width, that width is used as is, without applying the
+maximum size limit.  Whenever org-mode has not determined a width, the
+maximum size limit is always applied to the image's original size.
+
+Possible values:
+
+- nil
+  Always apply the maximum size limit.
+
+- t
+  Whenever org-mode has determined a width, respect it and skip the
+  maximum size limit.  Otherwise, apply the maximum size limit.
+
+- `attr-org-width-only'
+  Respect the width determined by org-mode only when it comes from an
+  explicit :width attribute in #+ATTR_ORG.  In all other cases (e.g. a
+  width determined only via #+ATTR_HTML, or no width at all), apply the
+  maximum size limit."
+  :type '(choice (const :tag "Never respect (always apply the limit)" nil)
+                 (const :tag "Always respect" t)
+                 (const :tag "Respect only for #+ATTR_ORG :width"
+                        attr-org-width-only))
+  :group 'org-limit-image-size)
+
+
+(defvar org-limit-image-size-has-attr-org-width nil)
+
+(autoload 'org-export-read-attribute "ox")
+(defun org-limit-image-size--org-link-preview-file (old-fun
+                                                    ov path link &rest args)
+  ;; Determine if the LINK has the #+ATTR_ORG: :width attribute, and
+  ;; make the result accessible from within
+  ;; `org-limit-image-size--create-image'.
+  (let ((org-limit-image-size-has-attr-org-width
+         (and org-limit-image-size
+              (eq org-limit-image-size-respect-org-width 'attr-org-width-only)
+              (when-let* ((paragraph (org-element-lineage link 'paragraph)))
+                (org-export-read-attribute :attr_org paragraph :width)))))
+    (apply old-fun ov path link args)))
+
+(defun org-limit-image-size-respect-org-width-p ()
+  (if (eq org-limit-image-size-respect-org-width 'attr-org-width-only)
+      org-limit-image-size-has-attr-org-width
+    org-limit-image-size-respect-org-width))
+
+(defun org-limit-image-size-respect-org-width--activate ()
+  (advice-add #'org-link-preview-file
+              :around
+              #'org-limit-image-size--org-link-preview-file))
+
+(defun org-limit-image-size-respect-org-width--deactivate ()
+  (advice-remove #'org-link-preview-file
+                 #'org-limit-image-size--org-link-preview-file))
+
+
 ;;;; Activate/Deactivate
 
 
@@ -67,10 +132,12 @@ If WIDTH-P is non-nil, return width, otherwise return height."
                 #'org-limit-image-size--override-create-image))
    ((fboundp 'org-display-inline-images) ;; ~Org 9.3
     (advice-add #'org-display-inline-images :around
-                #'org-limit-image-size--override-create-image))))
+                #'org-limit-image-size--override-create-image)))
+  (org-limit-image-size-respect-org-width--activate))
 
 (defun org-limit-image-size-deactivate ()
   (interactive)
+  (org-limit-image-size-respect-org-width--deactivate)
   (cond
    ((fboundp 'org--create-inline-image) ;; Org 9.4 ~ 9.8
     (advice-remove #'org--create-inline-image
@@ -97,52 +164,55 @@ the create-image function called from `org--create-inline-image'."
     (old-create-image file-or-data &optional type data-p &rest props)
   "Call OLD-CREATE-IMAGE by adding :max-width and :max-height to the PROPS."
   (when org-limit-image-size
-    (let ((max-width (org-limit-image-size--get-size t))
-          (max-height (org-limit-image-size--get-size nil))
-          (width (plist-get props :width))
-          (height (plist-get props :height)))
+    (let ((width (plist-get props :width)))
+      (message ":width=%s respect=%s" width (org-limit-image-size-respect-org-width-p))
+      (if (and width (org-limit-image-size-respect-org-width-p))
+          (apply old-create-image file-or-data type data-p props)
+        (let ((height (plist-get props :height))
+              (max-width (org-limit-image-size--get-size t))
+              (max-height (org-limit-image-size--get-size nil)))
 
-      ;; Use imagemagick if available (for Emacs Version < 27).
-      (when (and (null type)
-                 (image-type-available-p 'imagemagick))
-        (setq type 'imagemagick))
+          ;; Use imagemagick if available (for Emacs Version < 27).
+          (when (and (null type)
+                     (image-type-available-p 'imagemagick))
+            (setq type 'imagemagick))
 
-      ;; Limit :width and :height property.
-      ;;@todo clone props?
-      (when (and (numberp width) (> width max-width))
-        (when (numberp height)
+          ;; Limit :width and :height property.
+          ;;@todo clone props?
+          (when (and (numberp width) (> width max-width))
+            (when (numberp height)
+              (setq props
+                    (plist-put props
+                               :height
+                               (setq height (/ (* height max-width) width)))))
+            (setq props
+                  (plist-put props
+                             :width
+                             (setq width max-width))))
+          (when (and (numberp height) (> height max-height))
+            (when (numberp width)
+              (setq props
+                    (plist-put props
+                               :width
+                               (setq width (/ (* width max-height) height)))))
+            (setq props
+                  (plist-put props
+                             :height
+                             (setq height max-height))))
+
+          ;; Remove :width nil.
+          ;; Some environments fail when :width nil and :max-width are
+          ;; specified at the same time (Emacs 26 and ImageMagick).
+          (unless (plist-get props :width)
+            (setq props (org-plist-delete props :width)))
+
+          ;; Add :max-width and :max-height
           (setq props
-                (plist-put props
-                           :height
-                           (setq height (/ (* height max-width) width)))))
-        (setq props
-              (plist-put props
-                         :width
-                         (setq width max-width))))
-      (when (and (numberp height) (> height max-height))
-        (when (numberp width)
+                (plist-put props :max-width max-width))
           (setq props
-                (plist-put props
-                           :width
-                           (setq width (/ (* width max-height) height)))))
-        (setq props
-              (plist-put props
-                         :height
-                         (setq height max-height))))
+                (plist-put props :max-height max-height))
 
-      ;; Remove :width nil.
-      ;; Some environments fail when :width nil and :max-width are
-      ;; specified at the same time (Emacs 26 and ImageMagick).
-      (unless (plist-get props :width)
-        (setq props (org-plist-delete props :width)))
-
-      ;; Add :max-width and :max-height
-      (setq props
-            (plist-put props :max-width max-width))
-      (setq props
-            (plist-put props :max-height max-height))))
-
-  (apply old-create-image file-or-data type data-p props))
+          (apply old-create-image file-or-data type data-p props))))))
 
 
 (provide 'org-limit-image-size)
