@@ -61,30 +61,31 @@ If WIDTH-P is non-nil, return width, otherwise return height."
 
 (defun org-limit-image-size-activate ()
   (interactive)
-  (when (fboundp 'org-link-preview-region) ;; Org9.8~
-    (advice-add #'org-link-preview-region :around
-                #'org-limit-image-size--org-display-inline-images))
-  (when (fboundp 'org-display-inline-images) ;; ~Org9.7
+  (cond
+   ((fboundp 'org--create-inline-image) ;; Org 9.4 ~ 9.8
+    (advice-add #'org--create-inline-image :around
+                #'org-limit-image-size--override-create-image))
+   ((fboundp 'org-display-inline-images) ;; ~Org 9.3
     (advice-add #'org-display-inline-images :around
-                #'org-limit-image-size--org-display-inline-images)))
+                #'org-limit-image-size--override-create-image))))
 
 (defun org-limit-image-size-deactivate ()
   (interactive)
-  (when (fboundp 'org-link-preview-region) ;; Org9.8~
-    (advice-remove #'org-link-preview-region
-                   #'org-limit-image-size--org-display-inline-images))
-  (when (fboundp 'org-display-inline-images) ;; ~Org9.7
+  (cond
+   ((fboundp 'org--create-inline-image) ;; Org 9.4 ~ 9.8
+    (advice-remove #'org--create-inline-image
+                   #'org-limit-image-size--override-create-image))
+   ((fboundp 'org-display-inline-images) ;; ~Org 9.3
     (advice-remove #'org-display-inline-images
-                   #'org-limit-image-size--org-display-inline-images)))
+                   #'org-limit-image-size--override-create-image))))
 
 
 ;;;; Override Functions
 
 
-(defun org-limit-image-size--org-display-inline-images (old-func &rest args)
+(defun org-limit-image-size--override-create-image (old-func &rest args)
   "Forces :max-width and :max-height properties to be added to
-the create-image function while org-display-inline-images is
-running."
+the create-image function called from `org--create-inline-image'."
   (cl-letf* ((old-create-image (symbol-function #'create-image))
              ((symbol-function #'create-image)
               (lambda (&rest args)
