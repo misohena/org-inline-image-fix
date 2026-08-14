@@ -165,7 +165,7 @@ the create-image function called from `org--create-inline-image'."
   "Call OLD-CREATE-IMAGE by adding :max-width and :max-height to the PROPS."
   (when org-limit-image-size
     (let ((width (plist-get props :width)))
-      (message ":width=%s respect=%s" width (org-limit-image-size-respect-org-width-p))
+      ;; (message ":width=%s respect=%s" width (org-limit-image-size-respect-org-width-p))
       (if (and width (org-limit-image-size-respect-org-width-p))
           (apply old-create-image file-or-data type data-p props)
         (let ((height (plist-get props :height))
