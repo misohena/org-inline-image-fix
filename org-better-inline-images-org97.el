@@ -206,9 +206,9 @@ buffer boundaries with possible narrowing."
              (link-re (org-better-inline-images--link-regexp))
              (case-fold-search t))
         (while (re-search-forward link-re end t)
-          (when-let ((link (org-element-lineage ;; Org8.3~
-                            (org-element-context)
-                            '(link) t)))
+          (when-let* ((link (org-element-lineage ;; Org8.3~
+                             (org-element-context)
+                             '(link) t)))
             (let* ((desc-begin (org-element-property :contents-begin link))
                    (used-ov
                     (cond
@@ -303,7 +303,7 @@ Returns the overlay object if successful. Returns nil on failure.
 LINKTYPE and PATH are not necessarily the same as obtained from
 the path part of LINK. They may have been obtained from the
 description part."
-  (when-let ((updator (org-better-inline-images--overlay-updator linktype)))
+  (when-let* ((updator (org-better-inline-images--overlay-updator linktype)))
     (funcall updator link linktype path)))
 
 (defun org-better-inline-images--update-attachment-link (link _linktype path)
@@ -473,7 +473,7 @@ Note: This has nothing to do with org-limit-image-size.el.
                (nconc
                 (list :scale 1
                       :width width)
-                (when-let ((max-width (org-better-inline-images--max-width)))
+                (when-let* ((max-width (org-better-inline-images--max-width)))
                   (list :max-width max-width))))))))
 
 
